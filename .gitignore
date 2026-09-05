@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+coverage/
+
+# Environment & secrets — never commit real credentials.
+# Only *.example files belong in git.
+.env
+.env.*
+!.env.example
+
+# Logs & OS cruft
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+
+# Hosting / tooling
+.vercel/

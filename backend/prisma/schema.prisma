@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String          @id @default(uuid()) @db.Uuid
+  name         String          @db.VarChar(255)
+  email        String          @unique @db.VarChar(255)
+  passwordHash String          @map("password_hash")
+  status       String          @default("ACTIVE") @db.VarChar(50)
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  preference   UserPreference?
+  carts        Cart[]
+  orders       Order[]
+  sessions     AgentSession[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+model UserPreference {
+  id                   String   @id @default(uuid()) @db.Uuid
+  userId               String   @unique @map("user_id") @db.Uuid
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferredCurrency    String?  @map("preferred_currency") @db.VarChar(10)
+  maxBudget            Decimal? @map("max_budget") @db.Decimal(14, 2)
+  preferredPaymentMethod String? @map("preferred_payment_method") @db.VarChar(50)
+  preferences          Json?    @db.JsonB
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("user_preferences")
+}
+
+model Merchant {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String    @db.VarChar(255)
+  email        String    @unique @db.VarChar(255)
+  passwordHash String?   @map("password_hash")
+  status       String    @default("ACTIVE") @db.VarChar(50)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  products     Product[]
+
+  @@map("merchants")
+}
+
+model ProductCategory {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @db.VarChar(255)
+  slug      String    @unique @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at")
+  products  Product[]
+
+  @@map("product_categories")
+}
+
+model Product {
+  id            String           @id @default(uuid()) @db.Uuid
+  merchantId    String           @map("merchant_id") @db.Uuid
+  merchant      Merchant         @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  categoryId    String?          @map("category_id") @db.Uuid
+  category      ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  name          String           @db.VarChar(255)
+  slug          String           @db.VarChar(255)
+  description   String?
+  price         Decimal          @db.Decimal(14, 2)
+  currency      String           @default("INR") @db.VarChar(10)
+  stockQuantity Int              @default(0) @map("stock_quantity")
+  status        String           @default("ACTIVE") @db.VarChar(50)
+  attributes    Json?            @db.JsonB
+  imageUrl      String?          @map("image_url")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+
+  @@index([merchantId])
+  @@index([categoryId])
+  @@index([status])
+  @@map("products")
+}
+
+model Cart {
+  id        String     @id @default(uuid()) @db.Uuid
+  userId    String     @map("user_id") @db.Uuid
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    String     @default("ACTIVE") @db.VarChar(50)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  items     CartItem[]
+
+  @@index([userId, status])
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  cartId    String   @map("cart_id") @db.Uuid
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String   @map("product_id") @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity  Int
+  unitPrice Decimal  @map("unit_price") @db.Decimal(14, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([cartId])
+  @@map("cart_items")
+}
+
+model Order {
+  id             String      @id @default(uuid()) @db.Uuid
+  userId         String      @map("user_id") @db.Uuid
+  user           User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  merchantId     String?     @map("merchant_id") @db.Uuid
+  orderNumber    String      @unique @map("order_number") @db.VarChar(100)
+  status         String      @default("PENDING_PAYMENT") @db.VarChar(50)
+  subtotal       Decimal     @db.Decimal(14, 2)
+  shippingAmount Decimal     @default(0) @map("shipping_amount") @db.Decimal(14, 2)
+  discountAmount Decimal     @default(0) @map("discount_amount") @db.Decimal(14, 2)
+  totalAmount    Decimal     @map("total_amount") @db.Decimal(14, 2)
+  currency       String      @default("INR") @db.VarChar(10)
+  idempotencyKey String?     @map("idempotency_key") @db.VarChar(255)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  items          OrderItem[]
+  payments       Payment[]
+
+  @@index([userId, status])
+  @@index([userId, idempotencyKey])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  orderId     String   @map("order_id") @db.Uuid
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  productId   String?  @map("product_id") @db.Uuid
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName String   @map("product_name") @db.VarChar(255)
+  quantity    Int
+  unitPrice   Decimal  @map("unit_price") @db.Decimal(14, 2)
+  totalPrice  Decimal  @map("total_price") @db.Decimal(14, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model Payment {
+  id                String   @id @default(uuid()) @db.Uuid
+  orderId           String   @map("order_id") @db.Uuid
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  provider          String   @default("razorpay") @db.VarChar(50)
+  providerOrderId   String?  @map("provider_order_id") @db.VarChar(255)
+  providerPaymentId String?  @map("provider_payment_id") @db.VarChar(255)
+  amount            Decimal  @db.Decimal(14, 2)
+  currency          String   @default("INR") @db.VarChar(10)
+  status            String   @default("CREATED") @db.VarChar(50)
+  method            String?  @db.VarChar(50)
+  failureReason     String?  @map("failure_reason")
+  idempotencyKey    String?  @map("idempotency_key") @db.VarChar(255)
+  providerRefundId  String?  @map("provider_refund_id") @db.VarChar(255)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([orderId])
+  @@index([providerOrderId])
+  @@index([orderId, idempotencyKey])
+  @@map("payments")
+}
+
+model AgentSession {
+  id        String        @id @default(uuid()) @db.Uuid
+  userId    String        @map("user_id") @db.Uuid
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    String        @default("ACTIVE") @db.VarChar(50)
+  context   Json?         @db.JsonB
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  messages  AgentMessage[]
+  toolCalls AgentToolCall[]
+
+  @@index([userId, status])
+  @@map("agent_sessions")
+}
+
+model AgentMessage {
+  id        String       @id @default(uuid()) @db.Uuid
+  sessionId String       @map("session_id") @db.Uuid
+  session   AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String       @db.VarChar(50)
+  content   String
+  metadata  Json?        @db.JsonB
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@map("agent_messages")
+}
+
+model AgentToolCall {
+  id          String       @id @default(uuid()) @db.Uuid
+  sessionId   String       @map("session_id") @db.Uuid
+  session     AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  toolName    String       @map("tool_name") @db.VarChar(100)
+  arguments   Json?        @db.JsonB
+  result      Json?        @db.JsonB
+  status      String       @default("REQUESTED") @db.VarChar(50)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  completedAt DateTime?    @map("completed_at")
+
+  @@index([sessionId])
+  @@map("agent_tool_calls")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  entityType String   @map("entity_type") @db.VarChar(100)
+  entityId   String?  @map("entity_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  actorType  String   @map("actor_type") @db.VarChar(50)
+  metadata   Json?    @db.JsonB
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model WebhookEvent {
+  id          String    @id @default(uuid()) @db.Uuid
+  provider    String    @db.VarChar(50)
+  eventId     String    @unique @map("event_id") @db.VarChar(255)
+  eventType   String    @map("event_type") @db.VarChar(100)
+  payload     Json      @db.JsonB
+  processed   Boolean   @default(false)
+  processedAt DateTime? @map("processed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("webhook_events")
+}

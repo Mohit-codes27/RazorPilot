@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: razorpilot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: razorpilot
+      POSTGRES_PASSWORD: razorpilot
+      POSTGRES_DB: razorpilot
+    ports:
+      - '5433:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U razorpilot -d razorpilot']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    container_name: razorpilot-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      DATABASE_URL: postgresql://razorpilot:razorpilot@postgres:5432/razorpilot?schema=public
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-min-32-chars-xxxx}
+      JWT_EXPIRES_IN: 7d
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-simulator}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+    ports:
+      - '5000:5000'
+    command: sh -c "npx prisma migrate deploy || npx prisma db push; node dist/server.js"
+
+volumes:
+  pgdata:

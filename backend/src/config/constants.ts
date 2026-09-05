@@ -1,0 +1,42 @@
+export const API_PREFIX = '/api/v1';
+
+export const PAGINATION = {
+  DEFAULT_PAGE: 1,
+  DEFAULT_PAGE_SIZE: 20,
+  MAX_PAGE_SIZE: 50,
+} as const;
+
+export const USER_STATUS = {
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED',
+} as const;
+
+export const PRODUCT_STATUS = {
+  ACTIVE: 'ACTIVE',
+  OUT_OF_STOCK: 'OUT_OF_STOCK',
+  INACTIVE: 'INACTIVE',
+} as const;
+
+/** Products visible on the public storefront. */
+export const VISIBLE_PRODUCT_STATUSES = [
+  PRODUCT_STATUS.ACTIVE,
+  PRODUCT_STATUS.OUT_OF_STOCK,
+] as const;
+
+export const ORDER_STATUS = {
+  PENDING_PAYMENT: 'PENDING_PAYMENT',
+  PAID: 'PAID',
+  PROCESSING: 'PROCESSING',
+  SHIPPED: 'SHIPPED',
+  DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED',
+  PAYMENT_FAILED: 'PAYMENT_FAILED',
+} as const;
+
+export const PAYMENT_STATUS = {
+  CREATED: 'CREATED',
+  AUTHORIZED: 'AUTHORIZED',
+  CAPTURED: 'CAPTURED',
+  FAILED: 'FAILED',
+  REFUNDED: 'REFUNDED',
+} as const;
