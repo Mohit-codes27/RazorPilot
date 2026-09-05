@@ -18,7 +18,7 @@ export class ApiError extends Error {
   }
 }
 
-const BASE_URL = process.env.API_URL ?? "http://localhost:5000/api/v1";
+const BASE_URL = process.env.API_URL;
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
