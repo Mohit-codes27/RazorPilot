@@ -33,7 +33,7 @@ export function ChatInput({
         disabled={sending || !text.trim()}
         className="gradient-btn rounded-full px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
       >
-        {sending ? "…" : "➤"}
+        {sended ? "…" : "➤"}
       </button>
     </form>
   );
