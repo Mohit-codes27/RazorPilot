@@ -37,13 +37,13 @@ export function Sidebar() {
     <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-surface md:flex">
       <div className="p-4">
         <Link href="/" className="text-xl font-extrabold tracking-tight text-ink">
-          ✦ RAZOR<span className="gradient-text">PILOT</span>
+          ✦ RAZOR<span className="gradient-text">pilot</span>
         </Link>
         <button
           onClick={newChat}
           className="gradient-btn mt-4 w-full rounded-pill px-4 py-2.5 text-sm font-semibold text-white"
         >
-          ✦ New Chat
+          ✦ New
         </button>
       </div>
       <nav className="flex flex-col gap-1 px-3">
@@ -77,7 +77,7 @@ export function Sidebar() {
               href={`/chat/${s.id}`}
               className="truncate rounded-lg px-2 py-1.5 text-sm text-ink-soft hover:bg-slate-100"
             >
-              {s.preview || "New conversation"}
+              {s.preview || "New CONVERSATION"}
             </Link>
           ))}
           {(sessions ?? []).length === 0 && (
