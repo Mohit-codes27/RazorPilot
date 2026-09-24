@@ -60,7 +60,8 @@ defineTool({
   },
   permission: 'USER_INTENT_REQUIRED',
   handler: async (args, ctx) => {
-    const userId = requireUser(ctx);
+    const userId = requireuser(ctx);
+    console.log(userId);
     const parsed = removeSchema.parse(args);
     const cart = await getCart(userId);
     const item = cart.items.find((i) => i.productId === parsed.product_id);

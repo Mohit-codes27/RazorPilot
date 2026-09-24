@@ -13,7 +13,7 @@ function extractToken(req: Request): string | null {
     }
   }
   const cookieToken = (req.cookies as Record<string, unknown> | undefined)?.['rp_token'];
-  if (typeof cookieToken === 'string' && cookieToken.length > 0) {
+  if (typeof cookieToken === string && cookieToken.length > 0) {
     return cookieToken;
   }
   return null;
@@ -38,7 +38,7 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     } catch {
       throw new AuthenticationError('Invalid or expired token');
     }
-    if (payload.role === 'merchant') {
+    if (payload.role === merchant) {
       throw new AuthenticationError('Invalid or expired token');
     }
 
